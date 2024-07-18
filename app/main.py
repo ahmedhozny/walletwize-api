@@ -56,7 +56,7 @@ def login(body: AccountCredentials):
 def register(body: AccountCreate):
     user = auth.register_user(body)
     database = Backup(user.account_uuid)
-    return {"message": "Account successfully registered!", "email": user.email}
+    return {"message": "Account successfully registered!"}
 
 
 @app.route("/protected", methods=['GET'])
