@@ -1,9 +1,8 @@
 import uuid
-from datetime import datetime
 
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
-from app.exceptions import UserAlreadyExists, AppException, UserDoesNotExist, UserTokenInvalid
+from app.exceptions import AppException
 from app.models import AccountDetails
 from app.models.account_bearer import AccountBearer
 from app.models.account_security import AccountSecurity
@@ -23,10 +22,6 @@ class UserStorage:
 
     def add_user(self, schema: AccountCreate, hashed_password: str) -> AccountDetails:
         new_user = AccountDetails(
-            first_name=schema.first_name,
-            middle_name=schema.middle_name,
-            last_name=schema.last_name,
-            phone=schema.phone,
             email=schema.email,
             account_uuid=uuid.uuid4().bytes,
         )

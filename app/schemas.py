@@ -8,10 +8,7 @@ class AccountCredentials(BaseModel):
 
 
 class AccountCreate(AccountCredentials):
-    first_name: str
-    middle_name: str
-    last_name: str
-    phone: PhoneNumber
+    pass
 
 
 class TokenRevoke(BaseModel):

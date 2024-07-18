@@ -60,3 +60,51 @@ class ChangeLog(BaseModel):
                     END;
                     """
                     connection.execute(text(create_trigger_sql))
+
+    @staticmethod
+    def create_triggers_for_sqlite_table(engine, table_name):
+        check_trigger_sql = """
+            SELECT name FROM sqlite_master
+            WHERE type='trigger' AND name=:trigger_name;
+            """
+
+        trigger_definitions = [
+            {
+                "name": f"before_insert_{table_name}",
+                "timing": "BEFORE INSERT",
+                "body": f"""
+                    INSERT INTO change_log (table_name, row_id, operation)
+                    VALUES ('{table_name}', NEW.id, 'I');
+                    """
+            },
+            {
+                "name": f"before_update_{table_name}",
+                "timing": "BEFORE UPDATE",
+                "body": f"""
+                    INSERT INTO change_log (table_name, row_id, operation)
+                    VALUES ('{table_name}', NEW.id, 'U');
+                    """
+            },
+            {
+                "name": f"before_delete_{table_name}",
+                "timing": "BEFORE DELETE",
+                "body": f"""
+                    INSERT INTO change_log (table_name, row_id, operation)
+                    VALUES ('{table_name}', OLD.id, 'D');
+                    """
+            },
+        ]
+
+        with engine.connect() as connection:
+            for trigger in trigger_definitions:
+                result = connection.execute(text(check_trigger_sql), {"trigger_name": trigger["name"]}).fetchone()
+                if not result:
+                    create_trigger_sql = f"""
+                        CREATE TRIGGER {trigger["name"]}
+                        {trigger["timing"]} ON {table_name}
+                        FOR EACH ROW
+                        BEGIN
+                            {trigger["body"]}
+                        END;
+                        """
+                    connection.execute(text(create_trigger_sql))

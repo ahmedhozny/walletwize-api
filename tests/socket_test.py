@@ -1,9 +1,28 @@
 import socketio
 import json
+from sqlalchemy import create_engine, select, MetaData, Table, func
+from sqlalchemy.orm import sessionmaker
+from app.models.backup_models import BaseModel, ChangeLog
+
+# Define your engine and connect to your client-side database
+engine = create_engine('sqlite:///walletwize.db')
+
+# Create the change_log table if it doesn't exist
+BaseModel.metadata.create_all(engine)
+
+# Create triggers for specific tables
+ChangeLog.create_triggers_for_sqlite_table(engine, 'sources')
+ChangeLog.create_triggers_for_sqlite_table(engine, 'transactions')
 
 # Create a Socket.IO client
 sio = socketio.Client()
 
+# Create a session to interact with the database
+SessionLocal = sessionmaker(bind=engine)
+session = SessionLocal()
+
+# Replace 'your_token_here' with your actual token
+auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhaG1ob3NueTIwMDJAZ21haWwuY29tIiwiaWF0IjoxNzIxMzQzMzM0LCJleHAiOjE3MjM5MzUzMzR9.llXbDiNzBuUzk5vqgxpZH0DUfqXif8OA23VRGH9RQdk'
 
 @sio.event
 def connect():
@@ -21,25 +40,42 @@ def response(data):
 
 
 def send_sync_data():
-    client_id = "your_client_id"
+    # Query the change_log for unsynced changes
+    change_log_table = Table('change_log', MetaData(), autoload_with=engine)
+    changes_query = select(change_log_table).where(change_log_table.c.sync_time.is_(None))
+    changes = session.execute(changes_query).fetchall()
 
-    # Sample sync data
-    payload = {
-        "data": {
-            "id": 1,
-            "name": "John Doe",
-            "DOB": "1990-01-01"
-        },
-        "operation": "I",  # or 'U' for update, 'D' for delete
-        "table_name": "client_table"
-    }
+    for change in changes:
+        table_name = change['table_name']
+        row_id = change['row_id']
+        operation = change['operation']
 
-    # Send sync data to the server
-    sio.send(json.dumps(payload))
+        # Fetch the actual data from the specified table based on row_id
+        table = Table(table_name, MetaData(), autoload_with=engine)
+        record_query = select(table).where(table.c.id == row_id)
+        record = session.execute(record_query).fetchone()
+
+        if record:
+            payload = {
+                "log_id": change['id'],
+                "table_name": table_name,
+                "operation": operation,
+                "timestamp": change['change_time'].isoformat(),
+                "data": dict(record)
+            }
+
+            # Send sync data to the server
+            sio.emit('save_data', json.dumps(payload))
+
+            # Update the sync_time in change_log
+            update_query = change_log_table.update().where(change_log_table.c.id == change['id']).values(
+                sync_time=func.now())
+            session.execute(update_query)
+            session.commit()
 
 
 if __name__ == "__main__":
-    sio.connect("http://localhost:5000")
+    sio.connect("http://localhost:5000", headers={'Authorization': f'Bearer {auth_token}'})
     print("Sending...")
     send_sync_data()
     print("Sent")
