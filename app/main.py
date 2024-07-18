@@ -9,8 +9,7 @@ import logging
 
 from sqlalchemy.exc import NoResultFound
 
-from accounts_databases import backup
-from accounts_databases.backup import Backup
+from app.accounts_databases.backup import Backup
 from app.authentcation.basic_auth import BasicAuthentication
 from app.schemas import AccountCreate, AccountCredentials, TokenRevoke
 from app.exceptions import *
@@ -56,7 +55,7 @@ def login(body: AccountCredentials):
 @validate()
 def register(body: AccountCreate):
     user = auth.register_user(body)
-    database = backup.Backup(user.account_uuid)
+    database = Backup(user.account_uuid)
     return {"message": "Account successfully registered!", "email": user.email}
 
 

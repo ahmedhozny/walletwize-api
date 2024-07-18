@@ -5,9 +5,8 @@ import uuid
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker, Session
-import pandas as pd
 
-from models.backup_models import BaseModel, ChangeLog
+from app.models.backup_models import BaseModel, ChangeLog
 
 
 class Backup:
