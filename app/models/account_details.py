@@ -9,7 +9,6 @@ class AccountDetails(BaseModel):
     __tablename__ = 'account_details'
 
     _id = Column(Integer, name="id", primary_key=True, autoincrement=True)
-    full_name = Column(String(50), nullable=False)
 
     email = Column(String(320), nullable=False, unique=True)
     account_uuid = Column(BINARY(16), nullable=False)
