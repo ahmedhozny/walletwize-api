@@ -76,6 +76,7 @@ def protected():
 @validate()
 def logout():
     authorization_header = request.headers.get('Authorization')
+    print(authorization_header)
     if not authorization_header:
         return {'error': 'Missing Authorization header'}
 
