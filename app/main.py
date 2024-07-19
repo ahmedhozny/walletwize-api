@@ -48,7 +48,7 @@ def login(body: AccountCredentials):
     user = auth.validate_user(body)
     token = auth.create_access_token(user, datetime.utcnow(), expires_delta=timedelta(days=30))
     storage.user_storage().add_token(user, token)
-    return {"access_token": token, "token_type": "bearer"}
+    return {"token": token, "token_type": "bearer"}
 
 
 @app.route('/register', methods=['POST'])

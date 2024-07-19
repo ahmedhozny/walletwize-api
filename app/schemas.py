@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr
-from pydantic_extra_types.phone_numbers import PhoneNumber
 
 
 class AccountCredentials(BaseModel):
@@ -12,7 +11,7 @@ class AccountCreate(AccountCredentials):
 
 
 class TokenRevoke(BaseModel):
-    access_token: str
+    token: str
 
 
 class TokenCreate(TokenRevoke):
