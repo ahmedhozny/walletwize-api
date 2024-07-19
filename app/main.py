@@ -72,12 +72,20 @@ def protected():
     return {'message': "Authorized"}
 
 
-@app.route('/logout', methods=['DELETE'])
+@app.route('/logout', methods=['POST'])
 @validate()
-def logout(body: TokenRevoke):
-    revoked = auth.revoke_token(body.access_token)
+def logout():
+    authorization_header = request.headers.get('Authorization')
+    if not authorization_header:
+        return {'error': 'Missing Authorization header'}
+
+    if len(authorization_header.split(" ")) != 2:
+        return {'error': 'Invalid Authorization header'}
+
+    revoked = auth.revoke_token(authorization_header)
     if not revoked:
         raise UserTokenInvalid
+
     return {"message": "User successfully logged out (token revoked)!"}
 
 

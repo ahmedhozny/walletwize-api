@@ -91,7 +91,8 @@ class BasicAuthentication:
         except (jwt.exceptions.DecodeError, NoResultFound):
             raise UserTokenInvalid
 
-    def revoke_token(self, token: str):
+    def revoke_token(self, authorization: str):
+        token = authorization.split()[1]
         try:
             return self.__storage.user_storage().revoke_token(token)
         except NoResultFound:
