@@ -18,7 +18,7 @@ from app.storage import Storage
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 storage = Storage()
 auth = BasicAuthentication(storage)
@@ -95,18 +95,14 @@ def handle_connect():
     authorization_header = request.headers.get('Authorization')
     if not authorization_header:
         print('Missing Authorization header')
-        disconnect()
-        return False  # Prevent the client from connecting
-
+        raise ConnectionRefusedError('unauthorized!')
     try:
         token_data = auth.verify_access_token(authorization_header)
         user_email = token_data["email"]
         print(f"Client connected with email: {user_email}")
         return {'message': 'Connected to the server!'}
     except Exception as e:
-        print(f"Authorization failed: {e}")
-        disconnect()
-        return False  # Prevent the client from connecting
+        raise ConnectionRefusedError('unauthorized!')
 
 
 @socketio.on('disconnect')
