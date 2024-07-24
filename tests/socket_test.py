@@ -75,7 +75,7 @@ def send_sync_data():
 
 
 if __name__ == "__main__":
-    sio.connect("http://localhost:5000", headers={'Authorization': f'Bearer {auth_token}'})
+    sio.connect("http://16.170.98.54", headers={'Authorization': f'Bearer {auth_token}'})
     print("Sending...")
     send_sync_data()
     print("Sent")

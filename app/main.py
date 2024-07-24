@@ -18,10 +18,12 @@ from app.storage import Storage
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 storage = Storage()
 auth = BasicAuthentication(storage)
+
 # app.config["DEBUG"] = True
 
 
@@ -95,14 +97,14 @@ def handle_connect():
     authorization_header = request.headers.get('Authorization')
     if not authorization_header:
         print('Missing Authorization header')
-        raise ConnectionRefusedError('unauthorized!')
+        disconnect()
     try:
         token_data = auth.verify_access_token(authorization_header)
         user_email = token_data["email"]
         print(f"Client connected with email: {user_email}")
         return {'message': 'Connected to the server!'}
     except Exception as e:
-        raise ConnectionRefusedError('unauthorized!')
+        disconnect()
 
 
 @socketio.on('disconnect')
@@ -186,3 +188,7 @@ def handle_load_data(data):
     except Exception as e:
         print(f"Error in handle_load_data: {e}")
         return {'error': str(e)}
+
+
+if __name__ == "__main__":
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
