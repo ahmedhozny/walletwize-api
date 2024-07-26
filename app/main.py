@@ -180,8 +180,7 @@ def handle_load_data(data):
         try:
             backup_instance = Backup(user.account_uuid)
             changes = backup_instance.load_data(offset_id)
-            emit("payload", changes)
-            emit("load_data", "OK")
+            emit("load_data", changes)
         except NoResultFound:
             emit("load_data", {'error': "No more changes found."})
 
