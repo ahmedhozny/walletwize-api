@@ -116,7 +116,8 @@ class Backup:
         for key, value in record_data.items():
             if isinstance(value, datetime):
                 record_data[key] = value.isoformat()
-
+            else:
+                record_data[key] = str(value)
         payload["data"] = record_data
 
         return payload
