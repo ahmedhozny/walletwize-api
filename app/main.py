@@ -152,6 +152,7 @@ def handle_upload_data(data):
 @socketio.on('load_data')
 def handle_load_data(data):
     print("Load Data Request Received: " + data)
+    emit("lol", "LOL")
     try:
         authorization_header = request.headers.get('Authorization')
         if not authorization_header:
