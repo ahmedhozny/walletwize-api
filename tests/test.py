@@ -16,7 +16,7 @@ def handle_payload(data):
     print('Payload received:', data)
 
 def main():
-    sio.connect('http://16.170.98.54')
+    sio.connect('http://localhost:5000')
 
     # Example of sending data
     sio.emit('save_data', '{"example_key": "example_value"}')

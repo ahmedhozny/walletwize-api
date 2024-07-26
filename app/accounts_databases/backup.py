@@ -7,6 +7,9 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker, Session
 
 from app.models.backup_models import BaseModel, ChangeLog
+import threading
+
+lock = threading.Lock()
 
 
 class Backup:
@@ -30,51 +33,52 @@ class Backup:
         return self.session
 
     def sync_database(self, data: dict) -> None:
-        log_id = data['log_id']
-        table_name = data['table_name']
-        operation = data["operation"]
-        row_data = data["data"]
-        last_mod = datetime.fromisoformat(data["timestamp"])
+        with lock:
+            log_id = data['log_id']
+            table_name = data['table_name']
+            operation = data["operation"]
+            row_data = data["data"]
+            last_mod = datetime.fromisoformat(data["timestamp"])
 
-        table_sync = Table(table_name, MetaData(), autoload_with=self.__engine)
+            table_sync = Table(table_name, MetaData(), autoload_with=self.__engine)
 
-        # Convert date columns to datetime.date if present
-        for column, value in row_data.items():
-            if isinstance(value, str):
-                try:
-                    row_data[column] = datetime.fromisoformat(value).date()
-                except ValueError:
-                    continue  # Not a date string, continue
+            # Convert date columns to datetime.date if present
+            for column, value in row_data.items():
+                if isinstance(value, str):
+                    try:
+                        row_data[column] = datetime.fromisoformat(value).date()
+                    except ValueError:
+                        continue  # Not a date string, continue
 
-        if operation == 'I':
-            insert_statement = table_sync.insert().values(**row_data)
-            self.session.execute(insert_statement)
-        elif operation == 'U':
-            record_id = row_data.get('id')
-            if not record_id:
-                raise ValueError("Missing 'id' for update operation")
-            update_statement = table_sync.update().where(table_sync.c.id == record_id).values(**row_data)
-            self.session.execute(update_statement)
-        elif operation == 'D':
-            record_id = row_data.get('id')
-            if not record_id:
-                raise ValueError("Missing 'id' for delete operation")
-            delete_statement = table_sync.delete().where(table_sync.c.id == record_id)
-            self.session.execute(delete_statement)
-        else:
-            raise ValueError(f"Unsupported operation: {operation}")
+            if operation == 'I':
+                insert_statement = table_sync.insert().values(**row_data)
+                self.session.execute(insert_statement)
+            elif operation == 'U':
+                record_id = row_data.get('id')
+                if not record_id:
+                    raise ValueError("Missing 'id' for update operation")
+                update_statement = table_sync.update().where(table_sync.c.id == record_id).values(**row_data)
+                self.session.execute(update_statement)
+            elif operation == 'D':
+                record_id = row_data.get('id')
+                if not record_id:
+                    raise ValueError("Missing 'id' for delete operation")
+                delete_statement = table_sync.delete().where(table_sync.c.id == record_id)
+                self.session.execute(delete_statement)
+            else:
+                raise ValueError(f"Unsupported operation: {operation}")
 
-        log = ChangeLog(
-            id=log_id,
-            table_name=table_name,
-            row_id=row_data["id"],
-            operation=operation,
-            change_time=last_mod,
-            sync_time=datetime.utcnow()
-        )
-        self.session.add(log)
+            log = ChangeLog(
+                id=log_id,
+                table_name=table_name,
+                row_id=row_data["id"],
+                operation=operation,
+                change_time=last_mod,
+                sync_time=datetime.utcnow()
+            )
+            self.session.add(log)
 
-        self.session.commit()
+            self.session.commit()
 
     def load_data(self, offset_id: int) -> dict:
         # Query change_log for entries with ID greater than offset_id
