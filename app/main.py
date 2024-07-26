@@ -118,7 +118,8 @@ def handle_upload_data(data):
     try:
         authorization_header = request.headers.get('Authorization')
         if not authorization_header:
-            return {'error': 'Missing Authorization header'}
+            emit("save_data", '{error: Missing Authorization header}')
+            return
 
         token_data = auth.verify_access_token(authorization_header)
         user_email = token_data["email"]
@@ -126,37 +127,39 @@ def handle_upload_data(data):
         payload = json.loads(data)
 
         if payload is None:
-            return {'error': 'Invalid payload'}
+            emit("save_data", '{error: Invalid payload}')
+            return
 
         try:
             user = storage.user_storage().find_user_by_email(user_email)
         except NoResultFound:
-            return {'error': "No record found for the given email"}
+            emit("save_data", '{error: User does not exist}')
+            return
 
         backup_instance = Backup(user.account_uuid)
         backup_instance.sync_database(payload)
 
-        return {'message': "OK"}
+        emit("save_data", '{message: OK}')
 
     except UserException as e:
         if isinstance(e, (UserTokenInvalid, UserTokenExpired)):
             disconnect()
-        return {'error': e.message}
+        emit("save_data", '{error: ' + e.message + '}')
     except json.decoder.JSONDecodeError:
-        return {'error': 'Invalid payload'}
+        emit("save_data", '{error: Invalid payload}')
     except Exception as e:
         print(f"Error in handle_upload_data: {e}")
-        return {'error': str(e)}
+        emit("save_data", '{error: ' + str(e) + '}')
 
 
 @socketio.on('load_data')
 def handle_load_data(data):
     print("Load Data Request Received: " + data)
-    emit("lol", "LOL")
     try:
         authorization_header = request.headers.get('Authorization')
         if not authorization_header:
-            return {'error': 'Missing Authorization header'}
+            emit("load_data", {'error': 'Missing Authorization header'})
+            return
 
         token_data = auth.verify_access_token(authorization_header)
         user_email = token_data["email"]
@@ -165,30 +168,32 @@ def handle_load_data(data):
         offset_id = payload.get('offset_id')
 
         if offset_id is None:
-            return {'error': 'Invalid offset_id'}
+            emit("load_data", {'error': 'Invalid offset_id'})
+            return
 
         try:
             user = storage.user_storage().find_user_by_email(user_email)
         except NoResultFound:
-            return {'error': "No record found for the given email"}
+            emit("load_data", {'error': "No record found for the given email"})
+            return
 
         try:
             backup_instance = Backup(user.account_uuid)
             changes = backup_instance.load_data(offset_id)
             emit("payload", changes)
-            return "OK"
+            emit("load_data", "OK")
         except NoResultFound:
-            return {'error': "No more changes found."}
+            emit("load_data", {'error': "No more changes found."})
 
     except UserException as e:
         if isinstance(e, (UserTokenInvalid, UserTokenExpired)):
             disconnect()
-        return {'error': e.message}
+        emit("load_data", {'error': e.message})
     except json.decoder.JSONDecodeError:
-        return {'error': 'Invalid payload'}
+        emit("load_data", {'error': 'Invalid payload'})
     except Exception as e:
         print(f"Error in handle_load_data: {e}")
-        return {'error': str(e)}
+        emit("load_data", {'error': str(e)})
 
 
 if __name__ == "__main__":

@@ -22,11 +22,11 @@ SessionLocal = sessionmaker(bind=engine)
 session = SessionLocal()
 
 # Replace 'your_token_here' with your actual token
-auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhaG1ob3NueTIwMDJAZ21haWwuY29tIiwiaWF0IjoxNzIyMDIyMTgwLCJleHAiOjE3MjQ2MTQxODB9.-p9t3A2aveL1I8g23cDY7l3ulGrRCQ1GpF-CFislJEc'
+auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhaG1ob3NueTIwMDJAZ21haWwuY29tIiwiaWF0IjoxNzIyMDI3NTExLCJleHAiOjE3MjQ2MTk1MTF9.j_ospS1qNYSA3hynvrT6JfDMz0yemBTYeMu_r5b7UPk'
+
 @sio.event
 def connect():
     print("Connection established")
-
 
 @sio.event
 def disconnect():
@@ -39,8 +39,12 @@ def response(data):
 
 
 @sio.event
-def save_data(data):
+def lol(data):
     print(f"Received message: {data}")
+
+
+def load_data():
+    sio.emit('load_data', 0)
 
 
 def send_sync_data():
@@ -83,3 +87,4 @@ if __name__ == "__main__":
     print("Sending...")
     send_sync_data()
     print("Sent")
+    sio.wait()
