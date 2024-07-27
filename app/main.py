@@ -11,7 +11,7 @@ from sqlalchemy.exc import NoResultFound
 
 from app.accounts_databases.backup import Backup
 from app.authentcation.basic_auth import BasicAuthentication
-from app.schemas import AccountCreate, AccountCredentials, TokenRevoke
+from app.schemas import AccountCreate, AccountCredentials
 from app.exceptions import *
 from app.storage import Storage
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 storage = Storage()
 auth = BasicAuthentication(storage)
@@ -57,7 +57,7 @@ def login(body: AccountCredentials):
 @validate()
 def register(body: AccountCreate):
     user = auth.register_user(body)
-    database = Backup(user.account_uuid)
+    Backup(user.account_uuid)
     return {"message": "Account successfully registered!"}
 
 
@@ -102,14 +102,22 @@ def handle_connect():
         token_data = auth.verify_access_token(authorization_header)
         user_email = token_data["email"]
         print(f"Client connected with email: {user_email}")
-        return {'message': 'Connected to the server!'}
-    except Exception as e:
+    except Exception:
         disconnect()
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    authorization_header = request.headers.get('Authorization')
+    if not authorization_header:
+        print('Client disconnected: Unknown user')
+        return
+    try:
+        token_data = auth.verify_access_token(authorization_header)
+        user_email = token_data["email"]
+        print(f"Client disconnected with email: {user_email}")
+    except Exception:
+        print('Client disconnected: Unknown user')
 
 
 @socketio.on('save_data')
