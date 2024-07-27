@@ -22,7 +22,7 @@ SessionLocal = sessionmaker(bind=engine)
 session = SessionLocal()
 
 # Replace 'your_token_here' with your actual token
-auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhaG1ob3NueTIwMDJAZ21haWwuY29tIiwiaWF0IjoxNzIyMDI3NTExLCJleHAiOjE3MjQ2MTk1MTF9.j_ospS1qNYSA3hynvrT6JfDMz0yemBTYeMu_r5b7UPk'
+auth_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhaG1ob3NueTIwMDJAZ21haWwuY29tIiwiaWF0IjoxNzIyMDQwNTcwLCJleHAiOjE3MjQ2MzI1NzB9.wZZKT2nc2MZ3PP6PVQpMFS1TOHHGl1lg9r0jmL4vZsU'
 
 @sio.event
 def connect():

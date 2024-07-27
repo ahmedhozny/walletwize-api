@@ -19,7 +19,6 @@ class Backup:
     def __init__(self, account_uuid: bytes):
         self.account_uuid = account_uuid
         database_path = f'{self.dir_path}/{uuid.UUID(bytes=account_uuid)}.db'
-        print(os.path.abspath(database_path))
         self.__engine = create_engine(f"sqlite:///{database_path}")
         BaseModel.metadata.create_all(self.__engine)
         # session_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
@@ -109,7 +108,6 @@ class Backup:
         if not record_result:
             raise ValueError("Change log is corrupted.")
 
-        print(record_result)
         record_data = {key: value for key, value in record_result._mapping.items()}
 
         # Convert datetime fields to ISO format strings

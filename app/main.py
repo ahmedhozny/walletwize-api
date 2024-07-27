@@ -66,10 +66,10 @@ def register(body: AccountCreate):
 def protected():
     authorization_header = request.headers.get('Authorization')
     if not authorization_header:
-        return {'error': 'Missing Authorization header'}
+        raise UserTokenInvalid
 
     if len(authorization_header.split(" ")) != 2:
-        return {'error': 'Invalid Authorization header'}
+        raise UserTokenInvalid
     auth.verify_access_token(authorization_header)
     return {'message': "Authorized"}
 
@@ -78,12 +78,11 @@ def protected():
 @validate()
 def logout():
     authorization_header = request.headers.get('Authorization')
-    print(authorization_header)
     if not authorization_header:
-        return {'error': 'Missing Authorization header'}
+        raise UserTokenInvalid
 
     if len(authorization_header.split(" ")) != 2:
-        return {'error': 'Invalid Authorization header'}
+        raise UserTokenInvalid
 
     revoked = auth.revoke_token(authorization_header)
     if not revoked:
