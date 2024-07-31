@@ -50,7 +50,11 @@ class UserStorage:
             account_id=account.id,
             access_token=token,
         )
-        self.db_engine.new(bearer)
+        try:
+            self.db_engine.new(bearer)
+        except IntegrityError as e:
+            self.db_engine.get_session().rollback()
+            raise AppException(e)
 
     def get_token(self, access_token: str) -> AccountBearer:
         token_objs = self.db_engine.search_for(AccountBearer, {

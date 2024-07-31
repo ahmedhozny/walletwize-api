@@ -9,6 +9,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.models.backup_models import BaseModel, ChangeLog
 import threading
 
+from exceptions import AppException
+
 lock = threading.Lock()
 
 
@@ -50,22 +52,25 @@ class Backup:
                         continue  # Not a date string, continue
 
             if operation == 'I':
-                insert_statement = table_sync.insert().values(**row_data)
-                self.session.execute(insert_statement)
+                statement = table_sync.insert().values(**row_data)
             elif operation == 'U':
                 record_id = row_data.get('id')
                 if not record_id:
                     raise ValueError("Missing 'id' for update operation")
-                update_statement = table_sync.update().where(table_sync.c.id == record_id).values(**row_data)
-                self.session.execute(update_statement)
+                statement = table_sync.update().where(table_sync.c.id == record_id).values(**row_data)
             elif operation == 'D':
                 record_id = row_data.get('id')
                 if not record_id:
                     raise ValueError("Missing 'id' for delete operation")
-                delete_statement = table_sync.delete().where(table_sync.c.id == record_id)
-                self.session.execute(delete_statement)
+                statement = table_sync.delete().where(table_sync.c.id == record_id)
             else:
                 raise ValueError(f"Unsupported operation: {operation}")
+
+            try:
+                self.session.execute(statement)
+            except Exception as e:
+                self.session.rollback()
+                raise AppException(f"Failed to execute operation: {operation}\n{e}")
 
             log = ChangeLog(
                 id=log_id,
